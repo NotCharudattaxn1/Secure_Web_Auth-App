@@ -1,5 +1,7 @@
 # Secure Authentication Web App
 
+### 🌐 Live Demo: [View and Test Here](https://secure-web-auth-app.vercel.app)
+
 A modern, highly secure authentication application built with **Next.js 16**, **Tailwind CSS**, and **Neon Serverless Postgres**.
 
 ## Features
@@ -21,7 +23,7 @@ To test this application locally, you must connect it to a Neon Postgres databas
    Create a `.env.local` file in the root directory and add your Neon Database connection string:
    ```env
    DATABASE_URL="postgresql://user:password@your-neon-host.aws.neon.tech/neondb?sslmode=require"
-   # Make sure to also add any session secrets if your session lib requires it
+   # Use a secure random string (at least 32 characters) for JWT signing
    SESSION_SECRET="your-super-secret-key-at-least-32-chars-long"
    ```
 
