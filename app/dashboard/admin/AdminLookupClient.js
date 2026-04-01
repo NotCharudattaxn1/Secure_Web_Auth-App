@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
@@ -94,14 +94,19 @@ function UserRow({ u, onClick, active }) {
 export default function AdminLookupClient({ currentUser }) {
   const router = useRouter();
 
-  const [allUsers, setAllUsers]         = useState([]);
-  const [selected, setSelected]         = useState(null);
-  const [query, setQuery]               = useState("");
-  const [listLoading, setListLoading]   = useState(true);
-  const [searching, setSearching]       = useState(false);
-  const [searchError, setSearchError]   = useState(null);
-  const [refreshing, setRefreshing]     = useState(false);
+  const [allUsers, setAllUsers]           = useState([]);
+  const [selected, setSelected]           = useState(null);
+  const [query, setQuery]                 = useState("");
+  const [listLoading, setListLoading]     = useState(true);
+  const [searching, setSearching]         = useState(false);
+  const [searchError, setSearchError]     = useState(null);
+  const [refreshing, setRefreshing]       = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  // Keep a ref to selected so loadAll can read the latest value
+  // without needing it as a dependency (which would cause an infinite loop).
+  const selectedRef = useRef(selected);
+  useEffect(() => { selectedRef.current = selected; }, [selected]);
 
   const loadAll = useCallback(async (silent = false) => {
     if (!silent) setListLoading(true);
@@ -111,9 +116,10 @@ export default function AdminLookupClient({ currentUser }) {
       const data = await res.json();
       if (data.users) {
         setAllUsers(data.users);
-        // Refresh the selected user's data if one is open
-        if (selected) {
-          const fresh = data.users.find(u => u.id === selected.id);
+        // If a user detail is open, update it with fresh data from the list
+        const current = selectedRef.current;
+        if (current) {
+          const fresh = data.users.find(u => u.id === current.id);
           if (fresh) setSelected(fresh);
         }
       }
@@ -123,7 +129,7 @@ export default function AdminLookupClient({ currentUser }) {
       setListLoading(false);
       setRefreshing(false);
     }
-  }, [selected]);
+  }, []); // stable — no deps needed thanks to the ref
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
