@@ -112,7 +112,7 @@ export default function AdminLookupClient({ currentUser }) {
     if (!silent) setListLoading(true);
     else setRefreshing(true);
     try {
-      const res  = await fetch("/api/admin/user-lookup");
+      const res  = await fetch("/api/admin/user-lookup", { cache: "no-store" });
       const data = await res.json();
       if (data.users) {
         setAllUsers(data.users);
@@ -138,7 +138,7 @@ export default function AdminLookupClient({ currentUser }) {
     setDetailLoading(true);
     setSearchError(null);
     try {
-      const res  = await fetch(`/api/admin/user-lookup?username=${encodeURIComponent(username)}`);
+      const res  = await fetch(`/api/admin/user-lookup?username=${encodeURIComponent(username)}`, { cache: "no-store" });
       const data = await res.json();
       if (!res.ok) {
         setSearchError(data.error || "User not found");
@@ -159,7 +159,7 @@ export default function AdminLookupClient({ currentUser }) {
     setSearchError(null);
     setSelected(null);
     try {
-      const res  = await fetch(`/api/admin/user-lookup?username=${encodeURIComponent(query.trim())}`);
+      const res  = await fetch(`/api/admin/user-lookup?username=${encodeURIComponent(query.trim())}`, { cache: "no-store" });
       const data = await res.json();
       if (!res.ok) {
         setSearchError(data.error || "User not found");
