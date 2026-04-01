@@ -94,13 +94,14 @@ function UserRow({ u, onClick, active }) {
 export default function AdminLookupClient({ currentUser }) {
   const router = useRouter();
 
-  const [allUsers, setAllUsers]       = useState([]);
-  const [selected, setSelected]       = useState(null);
-  const [query, setQuery]             = useState("");
-  const [listLoading, setListLoading] = useState(true);
-  const [searching, setSearching]     = useState(false);
-  const [searchError, setSearchError] = useState(null);
-  const [refreshing, setRefreshing]   = useState(false);
+  const [allUsers, setAllUsers]         = useState([]);
+  const [selected, setSelected]         = useState(null);
+  const [query, setQuery]               = useState("");
+  const [listLoading, setListLoading]   = useState(true);
+  const [searching, setSearching]       = useState(false);
+  const [searchError, setSearchError]   = useState(null);
+  const [refreshing, setRefreshing]     = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   const loadAll = useCallback(async (silent = false) => {
     if (!silent) setListLoading(true);
@@ -108,16 +109,42 @@ export default function AdminLookupClient({ currentUser }) {
     try {
       const res  = await fetch("/api/admin/user-lookup");
       const data = await res.json();
-      if (data.users) setAllUsers(data.users);
+      if (data.users) {
+        setAllUsers(data.users);
+        // Refresh the selected user's data if one is open
+        if (selected) {
+          const fresh = data.users.find(u => u.id === selected.id);
+          if (fresh) setSelected(fresh);
+        }
+      }
     } catch (e) {
       console.error(e);
     } finally {
       setListLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [selected]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
+
+  // Fetch fresh data for a single user by username and select them
+  const fetchAndSelect = useCallback(async (username) => {
+    setDetailLoading(true);
+    setSearchError(null);
+    try {
+      const res  = await fetch(`/api/admin/user-lookup?username=${encodeURIComponent(username)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setSearchError(data.error || "User not found");
+      } else {
+        setSelected(data.user);
+      }
+    } catch {
+      setSearchError("Request failed.");
+    } finally {
+      setDetailLoading(false);
+    }
+  }, []);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -252,7 +279,7 @@ export default function AdminLookupClient({ currentUser }) {
                 <UserRow
                   key={u.id}
                   u={u}
-                  onClick={setSelected}
+                  onClick={(user) => fetchAndSelect(user.username)}
                   active={selected?.id === u.id}
                 />
               ))
@@ -276,6 +303,11 @@ export default function AdminLookupClient({ currentUser }) {
             </div>
           ) : (
             <div className="glass-panel rounded-2xl p-6 space-y-5 animate-fade-in">
+              {detailLoading && (
+                <div className="flex items-center justify-center py-4">
+                  <div className="w-5 h-5 border-2 border-gray-600 border-t-indigo-400 rounded-full animate-spin" />
+                </div>
+              )}
               {/* User header */}
               <div className="flex items-center gap-4 pb-4 border-b border-white/8">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xl font-bold text-white shadow-lg shadow-indigo-500/20">

@@ -40,8 +40,15 @@ export async function POST(req) {
       if (attempts >= 5) {
         lockedUntil = new Date(Date.now() + 15 * 60 * 1000).toISOString();
       }
-      await updateUserLockout(user.id, attempts, lockedUntil);
-      await logAudit(user.id, 'LOGIN_FAILED', ipAddress);
+      // Persist the failed attempt counter — wrap separately so a DB hiccup
+      // doesn't prevent the 401 from being returned.
+      try {
+        await updateUserLockout(user.id, attempts, lockedUntil);
+        await logAudit(user.id, 'LOGIN_FAILED', ipAddress);
+        console.log(`[login] failed attempt #${attempts} recorded for user ${user.id}`);
+      } catch (dbErr) {
+        console.error('[login] failed to persist lockout update:', dbErr);
+      }
       
       return NextResponse.json({ error: 'Invalid username or password' }, { status: 401 });
     }
